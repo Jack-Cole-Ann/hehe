@@ -1,0 +1,93 @@
+package com.mycompany.mallows;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class Smores {
+
+    private JFrame frame;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private final Mallows mallows;
+    private DataFetcherFrame dataFetcherFrame;
+
+    public Smores() {
+        initialize();
+        mallows = new Mallows(); // Instantiate Mallows for authentication
+    }
+
+    private void initialize() {
+        frame = new JFrame();
+        frame.setBounds(100, 100, 300, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.getContentPane().setLayout(null);
+
+        JLabel lblUsername = new JLabel("Username:");
+        lblUsername.setBounds(30, 30, 80, 20);
+        frame.getContentPane().add(lblUsername);
+
+        usernameField = new JTextField();
+        usernameField.setBounds(120, 30, 120, 20);
+        frame.getContentPane().add(usernameField);
+        usernameField.setColumns(10);
+
+        JLabel lblPassword = new JLabel("Password:");
+        lblPassword.setBounds(30, 60, 80, 20);
+        frame.getContentPane().add(lblPassword);
+
+        passwordField = new JPasswordField();
+        passwordField.setBounds(120, 60, 120, 20);
+        frame.getContentPane().add(passwordField);
+
+        JButton btnLogin = new JButton("Login");
+        btnLogin.setBounds(120, 100, 80, 20);
+        frame.getContentPane().add(btnLogin);
+        btnLogin.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = usernameField.getText().trim(); // Trim input
+                String password = new String(passwordField.getPassword()).trim(); // Trim input
+
+                boolean authenticated = mallows.authenticate(username, password);
+
+                if (authenticated) {
+                    JOptionPane.showMessageDialog(frame, "Login successful!");
+
+                    // Open DataFetcherFrame after successful login
+                    EventQueue.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            dataFetcherFrame = new DataFetcherFrame("C:\\Users\\Carmina\\Downloads\\data.csv");
+                            dataFetcherFrame.setVisible(true);
+                        }
+                    });
+
+                    // Hide the login frame after successful login
+                    frame.setVisible(false);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Login failed. Invalid credentials.");
+                }
+            }
+        });
+    }
+
+    public void setVisible(boolean visible) {
+        frame.setVisible(visible);
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Smores window = new Smores();
+                    window.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+}
