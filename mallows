@@ -1,0 +1,33 @@
+package com.mycompany.mallows;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+public class Mallows {
+
+    private static final String CSV_FILE = "C:\\Users\\Carmina\\Downloads\\users.csv";
+
+    public boolean authenticate(String username, String password) {
+        try (Reader reader = Files.newBufferedReader(Paths.get(CSV_FILE));
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+
+            for (CSVRecord csvRecord : csvParser) {
+                String recordUsername = csvRecord.get("username").trim();
+                String recordPassword = csvRecord.get("password").trim();
+
+                if (recordUsername.equals(username.trim()) && recordPassword.equals(password.trim())) {
+                    return true; // Authentication successful
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false; // Authentication failed
+    }
+}
