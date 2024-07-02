@@ -1,0 +1,201 @@
+package com.mycompany.mallows;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.EventObject;
+
+public class DataFetcherFrame extends JFrame {
+
+    private JTable table = null;
+    private final String csvFilePath; // Path to your CSV file
+
+    // Updated constructor to accept CSV file path
+    public DataFetcherFrame(String csvFilePath) {
+        this.csvFilePath = csvFilePath;
+        initializeFrame();
+    }
+
+    private void initializeFrame() {
+        setTitle("Data Fetcher");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // Create JTable with custom table model
+        DefaultTableModel model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // Allow editing all cells except for the first column
+                return column > 0;
+            }
+        };
+
+        table = new JTable(model);
+        table.setAutoCreateRowSorter(true); // Optional: enable row sorting
+        JScrollPane scrollPane = new JScrollPane(table);
+        getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+        // Load data from CSV file into the table model
+        loadDataFromCsv(csvFilePath, model);
+
+        // Add 'View Employee' button column to the table
+        model.addColumn("View Employee");
+
+        // Set the cell renderer and editor for the 'View Employee' column
+        table.getColumnModel().getColumn(model.getColumnCount() - 1).setCellRenderer(new ButtonRenderer());
+        table.getColumnModel().getColumn(model.getColumnCount() - 1).setCellEditor(new ButtonEditor(new JCheckBox()));
+
+        // Ensure the frame is visible
+        setVisible(true);
+    }
+
+    private void loadDataFromCsv(String csvFilePath, DefaultTableModel model) {
+        String line;
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+            // Read the first line as headers if present
+            String headerLine = br.readLine();
+            if (headerLine != null) {
+                String[] headers = headerLine.split(",");
+                model.setColumnIdentifiers(headers); // Set headers as column identifiers
+            }
+
+            // Read data lines and add rows to the table model
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split(",");
+                model.addRow(data);
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error loading data from CSV file: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Custom TableCellRenderer for rendering 'View Employee' buttons
+    class ButtonRenderer extends JButton implements TableCellRenderer {
+
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText("View Employee");
+            return this;
+        }
+    }
+
+    // Custom TableCellEditor for handling 'View Employee' button clicks
+    class ButtonEditor extends DefaultCellEditor {
+        private final JButton button;
+        private boolean clicked;
+
+        public ButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            button = new JButton();
+            button.setOpaque(true);
+
+            // Action listener for the button
+            button.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    displayEmployeeDetails();
+                    fireEditingStopped();
+                }
+            });
+        }
+
+        // Override getTableCellEditorComponent method
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            button.setText("View Employee");
+            clicked = true;
+            return button;
+        }
+
+        // Override isCellEditable method to return true
+        @Override
+        public boolean isCellEditable(EventObject e) {
+            return true;
+        }
+
+        // Override getCellEditorValue method
+        @Override
+        public Object getCellEditorValue() {
+            if (clicked) {
+                JOptionPane.showMessageDialog(button, "Button clicked!");
+            }
+            clicked = false;
+            return "View Employee";
+        }
+    }
+
+    // Method to display employee details from months2.csv
+    private void displayEmployeeDetails() {
+        // Create and configure JFrame to display employee details
+        JFrame employeeDetailsFrame = new JFrame("Employee Details from months2.csv");
+        employeeDetailsFrame.setSize(800, 600);
+        employeeDetailsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // Display employee data from months2.csv in a JTextArea
+        JTextArea displayArea = new JTextArea();
+        displayArea.setEditable(false);
+
+        try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\Carmina\\Downloads\\months2.csv"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                displayArea.append(line + "\n");
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(DataFetcherFrame.this, "Error reading months2.csv: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        JScrollPane scrollPane = new JScrollPane(displayArea);
+        employeeDetailsFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+        // Set frame visible
+        employeeDetailsFrame.setVisible(true);
+    }
+
+    // Method to save changes back to the CSV file
+    private void saveChangesToCsv(DefaultTableModel model) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(csvFilePath))) {
+            // Write headers
+            for (int i = 0; i < model.getColumnCount(); i++) {
+                bw.write(model.getColumnName(i));
+                if (i < model.getColumnCount() - 1) {
+                    bw.write(",");
+                }
+            }
+            bw.write("\n");
+
+            // Write data
+            for (int row = 0; row < model.getRowCount(); row++) {
+                for (int col = 0; col < model.getColumnCount(); col++) {
+                    bw.write(model.getValueAt(row, col).toString());
+                    if (col < model.getColumnCount() - 1) {
+                        bw.write(",");
+                    }
+                }
+                bw.write("\n");
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving data to CSV file: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                DataFetcherFrame frame = new DataFetcherFrame("C:\\Users\\Carmina\\Downloads\\data.csv");
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}
